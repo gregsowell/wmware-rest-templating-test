@@ -42,8 +42,8 @@
     #     # curl -k https://10.0.2.10/api
     #     ping -c 5 10.0.2.10
 
-    - name: Can the EE reach vCenter:443?
-      ansible.builtin.shell: ping -c 5 10.0.2.10
+    # - name: Can the EE reach vCenter:443?
+    #   ansible.builtin.shell: ping -c 5 10.0.2.10
 
     - name: Check if VM already exists (idempotency)
       vmware.vmware_rest.vcenter_vm_info:
