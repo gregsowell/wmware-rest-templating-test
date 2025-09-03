@@ -35,11 +35,11 @@
 
     - name: Can the EE reach vCenter:443?
       ansible.builtin.shell: |
-        set -x
-        getent hosts 10.0.2.10 || true
-        timeout 5 bash -c 'cat </dev/null >/dev/tcp/10.0.2.10/443' && echo "TCP OK" || echo "TCP FAIL"
-        curl -skI https://10.0.2.10/api || true
-
+        # set -x
+        # getent hosts 10.0.2.10 || true
+        # timeout 5 bash -c 'cat </dev/null >/dev/tcp/10.0.2.10/443' && echo "TCP OK" || echo "TCP FAIL"
+        # curl -skI https://10.0.2.10/api || true
+        curl -i https://10.0.2.10/api
 
     - name: Check if VM already exists (idempotency)
       vmware.vmware_rest.vcenter_vm_info:
