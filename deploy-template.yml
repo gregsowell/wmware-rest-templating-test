@@ -26,12 +26,12 @@
     power_on_after_deploy: true
 
   tasks:
-    - name: Resolve placement MOIDs
-      set_fact:
-        cluster_id: "{{ lookup('vmware.vmware_rest.cluster_moid', cluster_path) }}"
-        rp_id: "{{ lookup('vmware.vmware_rest.resource_pool_moid', rp_path) }}"
-        folder_id: "{{ lookup('vmware.vmware_rest.folder_moid', folder_path) }}"
-        ds_id: "{{ lookup('vmware.vmware_rest.datastore_moid', datastore_path) }}"
+    # - name: Resolve placement MOIDs
+    #   set_fact:
+    #     cluster_id: "{{ lookup('vmware.vmware_rest.cluster_moid', cluster_path) }}"
+    #     rp_id: "{{ lookup('vmware.vmware_rest.resource_pool_moid', rp_path) }}"
+    #     folder_id: "{{ lookup('vmware.vmware_rest.folder_moid', folder_path) }}"
+    #     ds_id: "{{ lookup('vmware.vmware_rest.datastore_moid', datastore_path) }}"
 
     - name: Check if VM already exists (idempotency)
       vmware.vmware_rest.vcenter_vm_info:
