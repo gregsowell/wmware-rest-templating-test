@@ -8,7 +8,7 @@
     vcenter_hostname: "vcenter.example.com"
     vcenter_username: "administrator@vsphere.local"
     vcenter_password: "{{ vault_vcenter_password }}"
-    vcenter_validate_certs: false
+    vcenter_validate_certs: false  
 
     # --- what to deploy ---
     new_vm_name: "rhel9-from-template-01"
