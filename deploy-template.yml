@@ -47,7 +47,7 @@
     #   register: vm_lookup
 
     - name: Get local content libraries
-      when: vm_lookup.value | length == 0
+#      when: vm_lookup.value | length == 0
       vmware.vmware_rest.content_locallibrary_info:
         vcenter_hostname: "{{ vcenter_hostname }}"
         vcenter_username: "{{ vcenter_username }}"
