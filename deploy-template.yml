@@ -1,0 +1,122 @@
+---
+- name: Deploy a VM from a Content Library template (vSphere REST)
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    # --- vCenter auth ---
+    vcenter_hostname: "vcenter.example.com"
+    vcenter_username: "administrator@vsphere.local"
+    vcenter_password: "{{ vault_vcenter_password }}"
+    vcenter_validate_certs: false
+
+    # --- what to deploy ---
+    new_vm_name: "rhel9-from-template-01"
+    template_name: "RHEL9.6Base-Subscribed"     # content library item name (template)
+
+    # --- placement (adjust to your inventory) ---
+    cluster_path: "/MNS/MNS"
+    rp_path: "/MNS/MNS/Resources"
+    folder_path: "/MNS/MNS/Greg/redhat"
+    datastore_path: "/MNS/MNS/SSD"
+
+    # optional post-deploy tweaks
+    cpu_count: 2
+    mem_mib: 4096
+    power_on_after_deploy: true
+
+  tasks:
+    - name: Resolve placement MOIDs
+      set_fact:
+        cluster_id: "{{ lookup('vmware.vmware_rest.cluster_moid', cluster_path) }}"
+        rp_id: "{{ lookup('vmware.vmware_rest.resource_pool_moid', rp_path) }}"
+        folder_id: "{{ lookup('vmware.vmware_rest.folder_moid', folder_path) }}"
+        ds_id: "{{ lookup('vmware.vmware_rest.datastore_moid', datastore_path) }}"
+
+    - name: Check if VM already exists (idempotency)
+      vmware.vmware_rest.vcenter_vm_info:
+        vcenter_hostname: "{{ vcenter_hostname }}"
+        vcenter_username: "{{ vcenter_username }}"
+        vcenter_password: "{{ vcenter_password }}"
+        vcenter_validate_certs: "{{ vcenter_validate_certs }}"
+        filter_names:
+          - "{{ new_vm_name }}"
+      register: vm_lookup
+
+    - name: Get local content libraries
+      when: vm_lookup.value | length == 0
+      vmware.vmware_rest.content_locallibrary_info:
+        vcenter_hostname: "{{ vcenter_hostname }}"
+        vcenter_username: "{{ vcenter_username }}"
+        vcenter_password: "{{ vcenter_password }}"
+        vcenter_validate_certs: "{{ vcenter_validate_certs }}"
+      register: libs
+
+    - name: Choose a library (adjust selection logic if you have several)
+      when: vm_lookup.value | length == 0
+      set_fact:
+        lib_id: "{{ libs.value[0].id }}"
+
+    - name: List items in the chosen library
+      when: vm_lookup.value | length == 0
+      vmware.vmware_rest.content_library_item_info:
+        vcenter_hostname: "{{ vcenter_hostname }}"
+        vcenter_username: "{{ vcenter_username }}"
+        vcenter_password: "{{ vcenter_password }}"
+        vcenter_validate_certs: "{{ vcenter_validate_certs }}"
+        library_id: "{{ lib_id }}"
+      register: lib_items
+
+    - name: Find the template item by name
+      when: vm_lookup.value | length == 0
+      set_fact:
+        template_item: >-
+          {{ (lib_items.value | selectattr('name', 'equalto', template_name) | list)[0] }}
+
+    - name: Deploy VM from content library template
+      when: vm_lookup.value | length == 0
+      vmware.vmware_rest.vcenter_vmtemplate_libraryitems:
+        vcenter_hostname: "{{ vcenter_hostname }}"
+        vcenter_username: "{{ vcenter_username }}"
+        vcenter_password: "{{ vcenter_password }}"
+        vcenter_validate_certs: "{{ vcenter_validate_certs }}"
+        state: deploy
+        name: "{{ new_vm_name }}"
+        library: "{{ lib_id }}"
+        template_library_item: "{{ template_item.id }}"
+        placement:
+          cluster: "{{ cluster_id }}"
+          resource_pool: "{{ rp_id }}"
+          folder: "{{ folder_id }}"
+          datastore: "{{ ds_id }}"
+      register: deployed
+
+    - name: Determine VM id (newly created or pre-existing)
+      set_fact:
+        vm_id: >-
+          {{ (deployed.value | default(omit)) |
+             default( (vm_lookup.value[0].vm) if (vm_lookup.value | length > 0) else omit ) }}
+
+    - name: (Optional) Adjust CPU and memory
+      when: vm_id is defined
+      vmware.vmware_rest.vcenter_vm:
+        vcenter_hostname: "{{ vcenter_hostname }}"
+        vcenter_username: "{{ vcenter_username }}"
+        vcenter_password: "{{ vcenter_password }}"
+        vcenter_validate_certs: "{{ vcenter_validate_certs }}"
+        vm: "{{ vm_id }}"
+        cpu:
+          count: "{{ cpu_count }}"
+        memory:
+          size_MiB: "{{ mem_mib }}"
+        state: present
+
+    - name: Power on the VM
+      when: vm_id is defined and power_on_after_deploy
+      vmware.vmware_rest.vcenter_vm_power:
+        vcenter_hostname: "{{ vcenter_hostname }}"
+        vcenter_username: "{{ vcenter_username }}"
+        vcenter_password: "{{ vcenter_password }}"
+        vcenter_validate_certs: "{{ vcenter_validate_certs }}"
+        vm: "{{ vm_id }}"
+        state: start
