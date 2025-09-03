@@ -8,7 +8,7 @@
     vcenter_hostname: "vcenter.example.com"
     vcenter_username: "administrator@vsphere.local"
     vcenter_password: "{{ vault_vcenter_password }}"
-    vcenter_validate_certs: false  
+    vcenter_validate_certs_opt: false  
 
     # --- what to deploy ---
     new_vm_name: "rhel9-from-template-01"
@@ -38,7 +38,7 @@
         vcenter_hostname: "{{ vcenter_hostname }}"
         vcenter_username: "{{ vcenter_username }}"
         vcenter_password: "{{ vcenter_password }}"
-        vcenter_validate_certs: "{{ vcenter_validate_certs }}"
+        vcenter_validate_certs: "{{ vcenter_validate_certs_opt }}"
         filter_names:
           - "{{ new_vm_name }}"
       register: vm_lookup
@@ -49,7 +49,7 @@
         vcenter_hostname: "{{ vcenter_hostname }}"
         vcenter_username: "{{ vcenter_username }}"
         vcenter_password: "{{ vcenter_password }}"
-        vcenter_validate_certs: "{{ vcenter_validate_certs }}"
+        vcenter_validate_certs: "{{ vcenter_validate_certs_opt }}"
       register: libs
 
     - name: Choose a library (adjust selection logic if you have several)
@@ -63,7 +63,7 @@
         vcenter_hostname: "{{ vcenter_hostname }}"
         vcenter_username: "{{ vcenter_username }}"
         vcenter_password: "{{ vcenter_password }}"
-        vcenter_validate_certs: "{{ vcenter_validate_certs }}"
+        vcenter_validate_certs: "{{ vcenter_validate_certs_opt }}"
         library_id: "{{ lib_id }}"
       register: lib_items
 
@@ -79,7 +79,7 @@
         vcenter_hostname: "{{ vcenter_hostname }}"
         vcenter_username: "{{ vcenter_username }}"
         vcenter_password: "{{ vcenter_password }}"
-        vcenter_validate_certs: "{{ vcenter_validate_certs }}"
+        vcenter_validate_certs: "{{ vcenter_validate_certs_opt }}"
         state: deploy
         name: "{{ new_vm_name }}"
         library: "{{ lib_id }}"
@@ -103,7 +103,7 @@
         vcenter_hostname: "{{ vcenter_hostname }}"
         vcenter_username: "{{ vcenter_username }}"
         vcenter_password: "{{ vcenter_password }}"
-        vcenter_validate_certs: "{{ vcenter_validate_certs }}"
+        vcenter_validate_certs: "{{ vcenter_validate_certs_opt }}"
         vm: "{{ vm_id }}"
         cpu:
           count: "{{ cpu_count }}"
@@ -117,6 +117,6 @@
         vcenter_hostname: "{{ vcenter_hostname }}"
         vcenter_username: "{{ vcenter_username }}"
         vcenter_password: "{{ vcenter_password }}"
-        vcenter_validate_certs: "{{ vcenter_validate_certs }}"
+        vcenter_validate_certs: "{{ vcenter_validate_certs_opt }}"
         vm: "{{ vm_id }}"
         state: start
