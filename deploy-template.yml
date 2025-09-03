@@ -33,6 +33,14 @@
     #     folder_id: "{{ lookup('vmware.vmware_rest.folder_moid', folder_path) }}"
     #     ds_id: "{{ lookup('vmware.vmware_rest.datastore_moid', datastore_path) }}"
 
+    - name: Can the EE reach vCenter:443?
+      ansible.builtin.shell: |
+        set -x
+        getent hosts 10.0.2.10 || true
+        timeout 5 bash -c 'cat </dev/null >/dev/tcp/10.0.2.10/443' && echo "TCP OK" || echo "TCP FAIL"
+        curl -skI https://10.0.2.10/api || true
+
+
     - name: Check if VM already exists (idempotency)
       vmware.vmware_rest.vcenter_vm_info:
         vcenter_hostname: "{{ vcenter_hostname }}"
