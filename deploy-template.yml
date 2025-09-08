@@ -35,7 +35,7 @@
 
 
     - name: Check if VM already exists (idempotency)
-      vmware.vmware.vmware_vm_info:
+      vmware_vm_info:
         hostname: "{{ vcenter_hostname }}"
         username: "{{ vcenter_username }}"
         password: "{{ vcenter_password }}"
