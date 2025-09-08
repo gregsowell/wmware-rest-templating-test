@@ -53,12 +53,12 @@
     #       - "REST probe status: {{ vcenter_rest_probe.status | default('n/a') }}"
     #       - "REST probe msg: {{ vcenter_rest_probe.msg | default('') }}"
 
-    - name: Resolve placement MOIDs
-      set_fact:
-        cluster_id: "{{ lookup('vmware.vmware_rest.cluster_moid', cluster_path) }}"
-        rp_id: "{{ lookup('vmware.vmware_rest.resource_pool_moid', rp_path) }}"
-        folder_id: "{{ lookup('vmware.vmware_rest.folder_moid', folder_path) }}"
-        ds_id: "{{ lookup('vmware.vmware_rest.datastore_moid', datastore_path) }}"
+    # - name: Resolve placement MOIDs
+    #   set_fact:
+    #     cluster_id: "{{ lookup('vmware.vmware_rest.cluster_moid', cluster_path) }}"
+    #     rp_id: "{{ lookup('vmware.vmware_rest.resource_pool_moid', rp_path) }}"
+    #     folder_id: "{{ lookup('vmware.vmware_rest.folder_moid', folder_path) }}"
+    #     ds_id: "{{ lookup('vmware.vmware_rest.datastore_moid', datastore_path) }}"
 
     # - name: Can the EE reach vCenter:443?
     #   ansible.builtin.shell: ping -c 5 10.0.2.10
