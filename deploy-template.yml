@@ -26,69 +26,39 @@
     power_on_after_deploy: true
 
   tasks:
-    # - name: Preflight — Can the EE open TCP/443 to vCenter?
-    #   ansible.builtin.wait_for:
-    #     host: "{{ vcenter_hostname }}"    # 10.0.50.51
-    #     port: 443
-    #     timeout: 5
-    #   register: vcenter_443
+    - name: Resolve placement MOIDs
+      set_fact:
+        cluster_id: "{{ lookup('vmware.vmware.cluster_moid', cluster_path) }}"
+        rp_id: "{{ lookup('vmware.vmware.resource_pool_moid', rp_path) }}"
+        folder_id: "{{ lookup('vmware.vmware.folder_moid', folder_path) }}"
+        ds_id: "{{ lookup('vmware.vmware.datastore_moid', datastore_path) }}"
 
-    # - name: Preflight — Try hitting the REST session endpoint
-    #   ansible.builtin.uri:
-    #     url: "https://{{ vcenter_hostname }}/rest/com/vmware/cis/session"
-    #     method: POST
-    #     force_basic_auth: true
-    #     url_username: "{{ vcenter_username }}"
-    #     url_password: "{{ vcenter_password }}"
-    #     validate_certs: false
-    #     status_code: [200, 201, 401]   # 401 means we reached it but creds/path might differ; that’s OK for reachability
-    #     timeout: 10
-    #   register: vcenter_rest_probe
-    #   failed_when: false
-
-    # - name: Debug preflight
-    #   ansible.builtin.debug:
-    #     msg:
-    #       - "TCP/443 reachable: {{ vcenter_443 is succeeded }}"
-    #       - "REST probe status: {{ vcenter_rest_probe.status | default('n/a') }}"
-    #       - "REST probe msg: {{ vcenter_rest_probe.msg | default('') }}"
-
-    # - name: Resolve placement MOIDs
-    #   set_fact:
-    #     cluster_id: "{{ lookup('vmware.vmware_rest.cluster_moid', cluster_path) }}"
-    #     rp_id: "{{ lookup('vmware.vmware_rest.resource_pool_moid', rp_path) }}"
-    #     folder_id: "{{ lookup('vmware.vmware_rest.folder_moid', folder_path) }}"
-    #     ds_id: "{{ lookup('vmware.vmware_rest.datastore_moid', datastore_path) }}"
-
-    # - name: Can the EE reach vCenter:443?
-    #   ansible.builtin.shell: ping -c 5 10.0.2.10
 
     - name: Check if VM already exists (idempotency)
-      vmware.vmware_rest.vcenter_vm_info:
-        vcenter_hostname: "{{ vcenter_hostname }}"
-        vcenter_username: "{{ vcenter_username }}"
-        vcenter_password: "{{ vcenter_password }}"
-        vcenter_validate_certs: "{{ vcenter_validate_certs_opt }}"
-        filter_names:
-          - "{{ new_vm_name }}"
+      vmware.vmware.vm_info:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: "{{ vcenter_validate_certs_opt }}"
+        name: "{{ new_vm_name }}"
       register: vm_lookup
 
     - name: Get local content libraries
-      when: vm_lookup.value | length == 0
-      vmware.vmware_rest.content_locallibrary_info:
-        vcenter_hostname: "{{ vcenter_hostname }}"
-        vcenter_username: "{{ vcenter_username }}"
-        vcenter_password: "{{ vcenter_password }}"
-        vcenter_validate_certs: "{{ vcenter_validate_certs_opt }}"
+      when: vm_lookup.virtual_machines | length == 0
+      vmware.vmware.content_library_info:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: "{{ vcenter_validate_certs_opt }}"
       register: libs
 
     - name: Choose a library (adjust selection logic if you have several)
-      when: vm_lookup.value | length == 0
+      when: vm_lookup.virtual_machines | length == 0
       set_fact:
-        lib_id: "{{ libs.value[0].id }}"
+        lib_id: "{{ libs.libraries[0].id }}"
 
-    - name: List items in the chosen library (new vmware collection)
-      when: vm_lookup.value | length == 0
+    - name: List items in the chosen library
+      when: vm_lookup.virtual_machines | length == 0
       vmware.vmware.content_library_item_info:
         hostname: "{{ vcenter_hostname }}"
         username: "{{ vcenter_username }}"
@@ -97,66 +67,54 @@
         library_id: "{{ lib_id }}"
       register: lib_items
 
-    - name: List items in the chosen library
-      when: vm_lookup.value | length == 0
-      vmware.vmware_rest.content_library_item_info:
-        vcenter_hostname: "{{ vcenter_hostname }}"
-        vcenter_username: "{{ vcenter_username }}"
-        vcenter_password: "{{ vcenter_password }}"
-        vcenter_validate_certs: "{{ vcenter_validate_certs_opt }}"
-        library_id: "{{ lib_id }}"
-      register: lib_items
+  # Removed duplicate task for listing items in the chosen library (REST)
 
     - name: Find the template item by name
-      when: vm_lookup.value | length == 0
+      when: vm_lookup.virtual_machines | length == 0
       set_fact:
         template_item: >-
-          {{ (lib_items.value | selectattr('name', 'equalto', template_name) | list)[0] }}
+          {{ (lib_items.library_items | selectattr('name', 'equalto', template_name) | list)[0] }}
 
     - name: Deploy VM from content library template
-      when: vm_lookup.value | length == 0
-      vmware.vmware_rest.vcenter_vmtemplate_libraryitems:
-        vcenter_hostname: "{{ vcenter_hostname }}"
-        vcenter_username: "{{ vcenter_username }}"
-        vcenter_password: "{{ vcenter_password }}"
-        vcenter_validate_certs: "{{ vcenter_validate_certs_opt }}"
-        state: deploy
+      when: vm_lookup.virtual_machines | length == 0
+      vmware.vmware.deploy_template:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: "{{ vcenter_validate_certs_opt }}"
+        template_src: "{{ template_item.id }}"
         name: "{{ new_vm_name }}"
-        library: "{{ lib_id }}"
-        template_library_item: "{{ template_item.id }}"
-        placement:
-          cluster: "{{ cluster_id }}"
-          resource_pool: "{{ rp_id }}"
-          folder: "{{ folder_id }}"
-          datastore: "{{ ds_id }}"
+        cluster: "{{ cluster_id }}"
+        resource_pool: "{{ rp_id }}"
+        folder: "{{ folder_id }}"
+        datastore: "{{ ds_id }}"
       register: deployed
 
     - name: Determine VM id (newly created or pre-existing)
       set_fact:
         vm_id: >-
-          {{ (deployed.value | default(omit)) |
-             default( (vm_lookup.value[0].vm) if (vm_lookup.value | length > 0) else omit ) }}
+          {{ (deployed.instance | default(omit)) |
+             default( (vm_lookup.virtual_machines[0].moid) if (vm_lookup.virtual_machines | length > 0) else omit ) }}
 
     - name: (Optional) Adjust CPU and memory
       when: vm_id is defined
-      vmware.vmware_rest.vcenter_vm:
-        vcenter_hostname: "{{ vcenter_hostname }}"
-        vcenter_username: "{{ vcenter_username }}"
-        vcenter_password: "{{ vcenter_password }}"
-        vcenter_validate_certs: "{{ vcenter_validate_certs_opt }}"
-        vm: "{{ vm_id }}"
-        cpu:
-          count: "{{ cpu_count }}"
-        memory:
-          size_MiB: "{{ mem_mib }}"
+      vmware.vmware.vm:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: "{{ vcenter_validate_certs_opt }}"
+        moid: "{{ vm_id }}"
+        hardware:
+          num_cpus: "{{ cpu_count }}"
+          memory_mb: "{{ mem_mib }}"
         state: present
 
     - name: Power on the VM
       when: vm_id is defined and power_on_after_deploy
-      vmware.vmware_rest.vcenter_vm_power:
-        vcenter_hostname: "{{ vcenter_hostname }}"
-        vcenter_username: "{{ vcenter_username }}"
-        vcenter_password: "{{ vcenter_password }}"
-        vcenter_validate_certs: "{{ vcenter_validate_certs_opt }}"
-        vm: "{{ vm_id }}"
-        state: start
+      vmware.vmware.vm_power:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: "{{ vcenter_validate_certs_opt }}"
+        moid: "{{ vm_id }}"
+        state: powered_on
