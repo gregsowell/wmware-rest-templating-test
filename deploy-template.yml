@@ -26,6 +26,33 @@
     power_on_after_deploy: true
 
   tasks:
+    - name: Preflight — Can the EE open TCP/443 to vCenter?
+      ansible.builtin.wait_for:
+        host: "{{ vcenter_hostname }}"    # 10.0.50.51
+        port: 443
+        timeout: 5
+      register: vcenter_443
+
+    - name: Preflight — Try hitting the REST session endpoint
+      ansible.builtin.uri:
+        url: "https://{{ vcenter_hostname }}/rest/com/vmware/cis/session"
+        method: POST
+        force_basic_auth: true
+        url_username: "{{ vcenter_username }}"
+        url_password: "{{ vcenter_password }}"
+        validate_certs: false
+        status_code: [200, 201, 401]   # 401 means we reached it but creds/path might differ; that’s OK for reachability
+        timeout: 10
+      register: vcenter_rest_probe
+      failed_when: false
+
+    - name: Debug preflight
+      ansible.builtin.debug:
+        msg:
+          - "TCP/443 reachable: {{ vcenter_443 is succeeded }}"
+          - "REST probe status: {{ vcenter_rest_probe.status | default('n/a') }}"
+          - "REST probe msg: {{ vcenter_rest_probe.msg | default('') }}"
+
     # - name: Resolve placement MOIDs
     #   set_fact:
     #     cluster_id: "{{ lookup('vmware.vmware_rest.cluster_moid', cluster_path) }}"
