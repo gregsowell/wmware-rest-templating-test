@@ -87,6 +87,16 @@
       set_fact:
         lib_id: "{{ libs.value[0].id }}"
 
+    - name: List items in the chosen library (new vmware collection)
+      when: vm_lookup.value | length == 0
+      vmware.vmware.content_library_item_info:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: "{{ vcenter_validate_certs_opt }}"
+        library_id: "{{ lib_id }}"
+      register: lib_items
+
     - name: List items in the chosen library
       when: vm_lookup.value | length == 0
       vmware.vmware_rest.content_library_item_info:
