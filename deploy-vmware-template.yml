@@ -55,11 +55,11 @@
 # #    delegate_to: localhost
       register: deploy_vm
 
-    - name: add this new host to inventory
-      add_host:
-        name: "{{ vm_name }}"
-        ansible_host: "{{ deploy_vm.instance.ip }}"
-        groups: deployed
+    # - name: add this new host to inventory
+    #   add_host:
+    #     name: "{{ vm_name }}"
+    #     ansible_host: "{{ deploy_vm.instance.ip }}"
+    #     groups: deployed
 
     #perform updates and suck here
 
