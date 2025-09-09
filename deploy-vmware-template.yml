@@ -54,3 +54,32 @@
 # #        device_type: vmxnet3
 # #    delegate_to: localhost
       register: deploy_vm
+
+    - name: add this new host to inventory
+      add_host:
+        name: "{{ vm_name }}"
+        ansible_host: "{{ deploy_vm.instance.ip }}"
+        groups: deployed
+
+    #perform updates and suck here
+
+    - name: shutdown vm
+      community.vmware.vmware_guest_powerstate:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: no
+        name: "{{ vm_name }}"
+        state: poweredoff
+
+    - name: create a template from the shutdown vm
+      community.vmware.vmware_guest:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: no
+        folder: "{{ vm_folder }}"
+        name: "{{ vm_name }}"
+        datacenter: "{{ vm_datacenter }}"
+        state: template
+      register: deploy_template
