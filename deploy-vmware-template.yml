@@ -15,10 +15,10 @@
     vm_template: "RHEL9.6Base-Subscribed"     # content library item name (template)
 
     # --- placement (adjust to your inventory) ---
-    cluster_path: "/MNS/MNS"
-    rp_path: "/MNS/MNS/Resources"
-    vm_folder: "/MNS/MNS/Greg/redhat"
-    datastore_path: "/MNS/MNS/SSD"
+    cluster_path: "MNS"
+    # rp_path: "/MNS/Resources"
+    vm_folder: "/Greg/redhat"
+    datastore_path: "/MNS/SSD"
     vm_datacenter: "MNS"
 
 
