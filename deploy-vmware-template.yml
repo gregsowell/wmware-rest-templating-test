@@ -11,14 +11,15 @@
     vcenter_validate_certs_opt: false  
 
     # --- what to deploy ---
-    new_vm_name: "rhel9-from-template-01"
-    template_name: "RHEL9.6Base-Subscribed"     # content library item name (template)
+    vm_name: "rhel9-from-template-01"
+    vm_template: "RHEL9.6Base-Subscribed"     # content library item name (template)
 
     # --- placement (adjust to your inventory) ---
     cluster_path: "/MNS/MNS"
     rp_path: "/MNS/MNS/Resources"
-    folder_path: "/MNS/MNS/Greg/redhat"
+    vm_folder: "/MNS/MNS/Greg/redhat"
     datastore_path: "/MNS/MNS/SSD"
+    vm_datacenter: "MNS"
 
 
   tasks:
