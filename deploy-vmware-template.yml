@@ -62,7 +62,9 @@
     #     ansible_host: "{{ deploy_vm.instance.ip }}"
     #     groups: deployed
 
-    #perform updates and suck here
+    - name: perform updates and such here
+      ansible.builtin.debug:
+        msg: Perform all of your updates here.
 
     - name: shutdown vm
       community.vmware.vmware_guest_powerstate:
