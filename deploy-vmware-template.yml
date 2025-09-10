@@ -101,7 +101,7 @@
         name: "{{ vm_template_new_name }}"
         datacenter: "{{ vm_datacenter }}"
         is_template: true
-        uuid: "{{ deploy_template.instance.hw_product_uuid }}"
+        uuid: "{{ deploy_vm.instance.hw_product_uuid }}"
       register: deploy_template
 
     # - name: debug deploy_template
