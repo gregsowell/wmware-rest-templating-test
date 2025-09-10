@@ -1,0 +1,80 @@
+---
+- name: Create template from vm
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    # --- vCenter auth ---
+    vcenter_hostname: "vcenter.example.com"
+    vcenter_username: "administrator@vsphere.local"
+    vcenter_password: "{{ vault_vcenter_password }}"
+    vcenter_validate_certs_opt: false  
+
+    # --- what to deploy ---
+    vm_name: "rhel9-from-template-01"
+    vm_template: "RHEL9.6Base-Subscribed"     # content library item name (template)
+    vm_template_new_name: "RHEL9.6Base-Subscribed-01"
+
+    # --- placement (adjust to your inventory) ---
+    cluster_path: "MNS"
+    # rp_path: "/MNS/Resources"
+    vm_folder: "/Greg/redhat"
+    datastore_path: "/MNS/SSD"
+    vm_datacenter: "MNS"
+
+
+  tasks:
+    - name: shutdown vm
+      community.vmware.vmware_guest_powerstate:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: no
+        name: "{{ vm_name }}"
+        state: powered-off
+
+    - name: wait until VM is powered off
+      community.vmware.vmware_guest_info:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: no
+        name: "{{ vm_name }}"
+        datacenter: "{{ vm_datacenter }}"
+      register: vm_info
+      until: vm_info.instance.hw_power_status == "poweredOff"
+      retries: 10
+      delay: 15
+
+    # - name: debug vm_info
+    #   debug:
+    #     var: vm_info
+
+    - name: create a template from the shutdown vm
+      community.vmware.vmware_guest:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: no
+        folder: "{{ vm_folder }}"
+        # name: "{{ vm_name }}"
+        name: "{{ vm_template_new_name }}"
+        datacenter: "{{ vm_datacenter }}"
+        is_template: true
+        uuid: "{{ vm_uuid }}"
+      register: deploy_template
+
+    # - name: debug deploy_template
+    #   debug:
+    #     var: deploy_template
+
+    # - name: rename the template
+    #   community.vmware.vmware_guest:
+    #     hostname: "{{ vcenter_hostname }}"
+    #     username: "{{ vcenter_username }}"
+    #     password: "{{ vcenter_password }}"
+    #     validate_certs: no
+    #     folder: "{{ vm_folder }}"
+    #     name: "{{ vm_template_new_name }}"
+    #     datacenter: "{{ vm_datacenter }}"
+    #     uuid: "{{ deploy_template.instance.hw_product_uuid }}"
