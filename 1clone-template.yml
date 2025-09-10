@@ -88,5 +88,5 @@
     - name: set stat vm_ip to vm_info.instance.ipv4
       ansible.builtin.set_stats:
         data:
-          vm_ip: vm_info.instance.ipv4
-          vm_uuid: deploy_vm.instance.hw_product_uuid
+          vm_ip: "{{ vm_info.instance.ipv4 }}"
+          vm_uuid: "{{ deploy_vm.instance.hw_product_uuid }}"
