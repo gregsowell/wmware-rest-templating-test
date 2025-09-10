@@ -98,5 +98,5 @@
         folder: "{{ vm_folder }}"
         name: "{{ vm_name }}"
         datacenter: "{{ vm_datacenter }}"
-        state: template
+        is_template: true
       register: deploy_template
