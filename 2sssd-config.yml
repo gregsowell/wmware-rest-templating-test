@@ -4,7 +4,7 @@
   #become: yes
   gather_facts: false
   vars:
-    ansible_host: "{{ vm_ip}}"
+    ansible_host: "{{ vm_ip | default(omit) }}"
 
   tasks:
     - name: Install required packages
