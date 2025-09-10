@@ -75,8 +75,8 @@
         datacenter: "{{ vm_datacenter }}"
         name: "{{ vm_name }}"
       register: vm_info
-      # until: vm_info.instance.ipv4 != ""
-      until: vm_info.instance.ipv4 | ipaddr
+      until: vm_info.instance.ipv4 != ""
+      # until: vm_info.instance.ipv4 | ipaddr
       retries: 10
       delay: 15
 
