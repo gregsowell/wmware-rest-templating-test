@@ -56,9 +56,9 @@
 # #    delegate_to: localhost
       register: deploy_vm
 
-    - name: debug deploy_vm
-      debug:
-        var: deploy_vm
+    # - name: debug deploy_vm
+    #   debug:
+    #     var: deploy_vm
 
     # - name: add this new host to inventory
     #   add_host:
@@ -66,3 +66,16 @@
     #     ansible_host: "{{ deploy_vm.instance.ip }}"
     #     groups: deployed
 
+    - name: Look up VM details (after it’s up)
+      community.vmware.vmware_guest_info:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: no
+        datacenter: "{{ vm_datacenter }}"
+        name: "{{ vm_name }}"
+      register: vm_info
+
+    - name: debug vm_info
+      debug:
+        var: vm_info
