@@ -13,6 +13,7 @@
     # --- what to deploy ---
     vm_name: "rhel9-from-template-01"
     vm_template: "RHEL9.6Base-Subscribed"     # content library item name (template)
+    vm_template_new_name: "RHEL9.6Base-Subscribed-01"
 
     # --- placement (adjust to your inventory) ---
     cluster_path: "MNS"
@@ -96,14 +97,16 @@
         password: "{{ vcenter_password }}"
         validate_certs: no
         folder: "{{ vm_folder }}"
-        name: "{{ vm_name }}"
+        # name: "{{ vm_name }}"
+        name: "{{ vm_template_new_name }}"
         datacenter: "{{ vm_datacenter }}"
         is_template: true
+        uuid: "{{ deploy_template.instance.hw_product_uuid }}"
       register: deploy_template
 
-    - name: debug deploy_template
-      debug:
-        var: deploy_template
+    # - name: debug deploy_template
+    #   debug:
+    #     var: deploy_template
 
     # - name: rename the template
     #   community.vmware.vmware_guest:
@@ -112,6 +115,6 @@
     #     password: "{{ vcenter_password }}"
     #     validate_certs: no
     #     folder: "{{ vm_folder }}"
-    #     name: "{{ vm_name }}"
+    #     name: "{{ vm_template_new_name }}"
     #     datacenter: "{{ vm_datacenter }}"
-        
+    #     uuid: "{{ deploy_template.instance.hw_product_uuid }}"
