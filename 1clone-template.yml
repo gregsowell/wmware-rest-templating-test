@@ -84,3 +84,8 @@
     - name: debug vm_info
       debug:
         var: vm_info.instance.ipv4
+
+    - name: set stat vm_ip to vm_info.instance.ipv4
+      ansible.builtin.set_stats:
+        data:
+          vm_ip: vm_info.instance.ipv4
