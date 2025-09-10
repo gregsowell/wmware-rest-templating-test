@@ -81,9 +81,13 @@
         name: "{{ vm_name }}"
         datacenter: "{{ vm_datacenter }}"
       register: vm_info
-      until: vm_info.instance.power_state == "poweredOff"
-      retries: 10
-      delay: 15
+      # until: vm_info.instance.power_state == "poweredOff"
+      # retries: 10
+      # delay: 15
+
+    - name: debug vm_info
+      debug:
+        var: vm_info
 
     - name: create a template from the shutdown vm
       community.vmware.vmware_guest:
