@@ -66,7 +66,7 @@
     #     ansible_host: "{{ deploy_vm.instance.ip }}"
     #     groups: deployed
 
-    - name: Look up VM details (after it’s up)
+    - name: Look up VM details
       community.vmware.vmware_guest_info:
         hostname: "{{ vcenter_hostname }}"
         username: "{{ vcenter_username }}"
@@ -83,4 +83,4 @@
 
     - name: debug vm_info
       debug:
-        var: vm_info
+        var: vm_info.instance.ipv4
