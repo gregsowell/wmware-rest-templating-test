@@ -1,0 +1,91 @@
+---
+- name: Clone a VM from a vSphere template
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    # --- vCenter auth ---
+    vcenter_hostname: "vcenter.example.com"
+    vcenter_username: "administrator@vsphere.local"
+    vcenter_password: "{{ vault_vcenter_password }}"
+    vcenter_validate_certs_opt: false  
+
+    # --- what to deploy ---
+    vm_name: "rhel9-from-template-01"
+    vm_template: "RHEL9.6Base-Subscribed"     # content library item name (template)
+    vm_template_new_name: "RHEL9.6Base-Subscribed-01"
+
+    # --- placement (adjust to your inventory) ---
+    cluster_path: "MNS"
+    # rp_path: "/MNS/Resources"
+    vm_folder: "/Greg/redhat"
+    datastore_path: "/MNS/SSD"
+    vm_datacenter: "MNS"
+    # setup networking
+    vm_netname: Greg
+    vm_ip: 10.11.12.13
+    vm_netmask: 255.255.255.0
+    vm_gateway: 10.11.12.1
+
+  tasks:
+    - name: connect to vcenter and do a basic provisioning
+      community.vmware.vmware_guest:
+        # hostname: "{{ vcenter_hostname }}"
+        # username: "{{ vcenter_username }}"
+        # password: "{{ vcenter_password }}"
+        validate_certs: no
+        folder: "{{ vm_folder }}"
+        name: "{{ vm_name }}"
+        datacenter: "{{ vm_datacenter }}"
+        state: poweredon
+#      guest_id: centos64Guest
+        template: "{{ vm_template }}"
+#     # This is hostname of particular ESXi server on which user wants VM to be deployed
+#         disk:
+#         - size_gb: "{{ vm_disksize }}"
+#           type: thin
+#           datastore: "{{ vm_datastore }}"
+#         hardware:
+#           memory_mb: "{{ vm_memory }}"
+#           num_cpus: "{{ vm_cpus}}"
+#           scsi: paravirtual
+        networks:
+        - name: "{{ vm_netname}}"
+          type: static
+#        mac: aa:bb:dd:aa:00:14
+          ip: "{{ vm_ip }}"
+          netmask: "{{ vm_netmask }}"
+          gateway: "{{ vm_gateway }}"
+# #        device_type: vmxnet3
+# #    delegate_to: localhost
+      register: deploy_vm
+
+    # - name: debug deploy_vm
+    #   debug:
+    #     var: deploy_vm
+
+    # - name: add this new host to inventory
+    #   add_host:
+    #     name: "{{ vm_name }}"
+    #     ansible_host: "{{ deploy_vm.instance.ip }}"
+    #     groups: deployed
+
+    - name: Look up VM details
+      community.vmware.vmware_guest_info:
+        # hostname: "{{ vcenter_hostname }}"
+        # username: "{{ vcenter_username }}"
+        # password: "{{ vcenter_password }}"
+        validate_certs: no
+        datacenter: "{{ vm_datacenter }}"
+        name: "{{ vm_name }}"
+      register: vm_info
+      until: vm_info.instance.ipv4 != None
+      # until: vm_info.instance.ipv4 | ipaddr
+      retries: 10
+      delay: 15
+
+    - name: set stat vm_ip to vm_info.instance.ipv4
+      ansible.builtin.set_stats:
+        data:
+          # vm_ip: "{{ vm_info.instance.ipv4 }}"
+          vm_uuid: "{{ deploy_vm.instance.hw_product_uuid }}"
